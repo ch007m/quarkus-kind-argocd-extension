@@ -1,17 +1,15 @@
-package dev.swowdrop.argocd.extension.test;
+package dev.swowdrop.argocd.extension.it;
 
+import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
-import io.quarkus.test.QuarkusDevModeTest;
-
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 
+@QuarkusTest
 public class ArgocdExtensionDevModeTest {
 
     private final String HelloMessage = "<pre>\n" +
@@ -28,10 +26,12 @@ public class ArgocdExtensionDevModeTest {
         "                             `'--.._\\..--''\n" +
         "</pre>\n";
 
-    // Start hot reload (DevMode) test with your extension loaded
-    @RegisterExtension
-    static final QuarkusDevModeTest devModeTest = new QuarkusDevModeTest()
-            .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class));
+    private static String HTTP_PORT;
+
+    @BeforeAll
+    public static void setup() {
+        HTTP_PORT = ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.http-port", String.class);
+    }
 
     @Test
     public void writeYourOwnDevModeTest() {
@@ -43,7 +43,7 @@ public class ArgocdExtensionDevModeTest {
     public void testHelloWorld() {
         RestAssured
             .given()
-              .port(34851)
+              .port(Integer.parseInt(HTTP_PORT))
             .when()
               .get("/")
             .then()

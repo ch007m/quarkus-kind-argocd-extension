@@ -1,40 +1,45 @@
 package dev.swowdrop.argocd.extension.deployment;
 
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.builditem.ApplicationInfoBuildItem;
+import io.quarkus.deployment.builditem.CuratedApplicationShutdownBuildItem;
 import io.quarkus.deployment.builditem.DevServicesResultBuildItem;
 
+import io.quarkus.devservices.common.ContainerShutdownCloseable;
 import org.jboss.logging.Logger;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.utility.DockerImageName;
 
 import java.util.Map;
 
 class ArgocdExtensionProcessor {
     private static final Logger LOG = Logger.getLogger(ArgocdExtensionProcessor.class);
-    private static final String FEATURE = "argocd-extension";
-    private static final int SERVICE_PORT = 8000;
+
+    static volatile DevServicesResultBuildItem.RunningDevService devService;
 
     @BuildStep
-    public DevServicesResultBuildItem feature(ApplicationInfoBuildItem info) {
-        var name = info.getName();
-        var version = info.getVersion();
+    public DevServicesResultBuildItem feature(
+        ArgocdBuildTimeConfig config,
+        CuratedApplicationShutdownBuildItem closeBuildItem) {
 
-        DockerImageName dockerImageName = DockerImageName.parse("crccheck/hello-world");
-        GenericContainer container = new GenericContainer<>(dockerImageName)
-            .withExposedPorts(SERVICE_PORT)
-            .waitingFor(Wait.forLogMessage(".*" + "httpd" + ".*", 1))
-            .withReuse(true);
-        container.start();
+        if (devService != null) {
+            // only produce DevServicesResultBuildItem when the dev service first starts.
+            return null;
+        }
 
-        String newUrl = "http://" + container.getHost() + ":" + container.getMappedPort(SERVICE_PORT);
-        Map<String, String> configOverrides = Map.of("hello-world.base-url", newUrl);
+        if (!config.devservices().enabled()) {
+            // Argocd Dev Service not enabled
+            return null;
+        }
+        var argocd = new ArgocdContainer(config.devservices());
+        argocd.start();
 
-        LOG.info("The Hello World service is available at the url: " + newUrl);
+        String httpUrl = argocd.getHttpUrl();
+        LOG.infof("Argocd HTTP URL: %s", httpUrl);
+        Map<String, String> configOverrides = Map.of("quarkus.argocd.devservices.http-url", httpUrl);
 
-        return new DevServicesResultBuildItem.RunningDevService(FEATURE, container.getContainerId(),
-            container::close, configOverrides)
-            .toBuildItem();
+        ContainerShutdownCloseable closeable = new ContainerShutdownCloseable(argocd, ArgocdProcessor.FEATURE);
+        closeBuildItem.addCloseTask(closeable::close, true);
+        devService = new DevServicesResultBuildItem.RunningDevService(ArgocdProcessor.FEATURE, argocd.getContainerId(), closeable, configOverrides);
+
+        return devService.toBuildItem();
     }
 }
