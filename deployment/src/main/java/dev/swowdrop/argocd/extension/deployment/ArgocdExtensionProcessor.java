@@ -9,7 +9,6 @@ import io.quarkus.devservices.common.ContainerShutdownCloseable;
 import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
 import org.jboss.logging.Logger;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -22,7 +21,7 @@ class ArgocdExtensionProcessor {
     public DevServicesResultBuildItem feature(
         ArgocdBuildTimeConfig config,
         CuratedApplicationShutdownBuildItem closeBuildItem,
-        Optional<KubernetesClientBuildItem> kubeDevServiceRequest) {
+        Optional<KubernetesClientBuildItem> kubeDevServiceClient) {
 
         if (devService != null) {
             // only produce DevServicesResultBuildItem when the dev service first starts.
@@ -36,7 +35,7 @@ class ArgocdExtensionProcessor {
         var argocd = new ArgocdContainer(config.devservices());
         argocd.start();
 
-        Config kubeConfig = kubeDevServiceRequest.get().getConfig();
+        Config kubeConfig = kubeDevServiceClient.get().getConfig();
         kubeConfig.getContexts().stream().forEach(ctx -> LOG.info("Kube ctx: " + ctx));
 
         String httpUrl = argocd.getHttpUrl();
