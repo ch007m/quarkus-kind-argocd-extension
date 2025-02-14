@@ -34,10 +34,18 @@ class ArgocdExtensionProcessor {
         }
 
     @BuildStep
+    void requestKind(ArgocdBuildTimeConfig config,
+                     BuildProducer<KubernetesClientBuildItem> kubeDevServiceRequest) {
+        if (config.devservices().enabled()) {
+            kubeDevServiceRequest.produce(new KubernetesClientBuildItem(null,null));
+        }
+    }
+
+    @BuildStep
     public DevServicesResultBuildItem feature(
         ArgocdBuildTimeConfig config,
-        KubernetesClientBuildItem kubeClient,
         CuratedApplicationShutdownBuildItem closeBuildItem,
+        Optional<KubernetesClientBuildItem> kubeDevServiceRequest,
         Optional<GiteaDevServiceInfoBuildItem> giteaServiceInfo) {
 
         if (devService != null) {
@@ -52,14 +60,11 @@ class ArgocdExtensionProcessor {
         var argocd = new ArgocdContainer(config.devservices());
         argocd.start();
 
-        Map<String, String> configOverrides = new HashMap<>();
         giteaServiceInfo.ifPresent(gitea -> {
-            configOverrides.put("quarkus.argocd.git.url", "http://" + gitea.host() + ":" + gitea.httpPort() + "/");
-            configOverrides.put("quarkus.argocd.git.username", gitea.adminUsername());
-            configOverrides.put("quarkus.argocd.git.password", gitea.adminPassword());
+            LOG.info("Gitea host is available : " + gitea.host());
         });
 
-        Config kubeConfig = kubeClient.getConfig();
+        Config kubeConfig = kubeDevServiceRequest.get().getConfig();
         kubeConfig.getContexts().stream().forEach(ctx -> LOG.info("Kube ctx: " + ctx));
 
         String httpUrl = argocd.getHttpUrl();
