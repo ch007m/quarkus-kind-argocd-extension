@@ -1,24 +1,24 @@
 package dev.swowdrop.argocd.extension.deployment;
 
-import com.dajudge.kindcontainer.client.KubeConfigUtils;
+import com.dajudge.kindcontainer.client.config.KubeConfig;
+import io.fabric8.kubernetes.api.model.ContextBuilder;
+import io.fabric8.kubernetes.api.model.NamedContext;
+import io.fabric8.kubernetes.api.model.NamedContextBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CuratedApplicationShutdownBuildItem;
 import io.quarkus.deployment.builditem.DevServicesResultBuildItem;
-import io.quarkus.kubernetes.client.spi.KubernetesClientBuildItem;
 import io.quarkus.kubernetes.client.spi.KubernetesDevServiceInfoBuildItem;
 
 import io.quarkus.devservices.common.ContainerShutdownCloseable;
 import org.jboss.logging.Logger;
 
 import java.util.Map;
-import java.util.Optional;
-
-import static io.fabric8.kubernetes.client.Config.fromKubeconfig;
 
 class ArgocdExtensionProcessor {
     private static final Logger LOG = Logger.getLogger(ArgocdExtensionProcessor.class);
@@ -58,6 +58,8 @@ class ArgocdExtensionProcessor {
             return null;
         }
 
+        KubeConfig containerKubeCfg = kubeServiceInfo.getConfig();
+
         LOG.info(">>> Cluster container name : " + kubeServiceInfo.getName());
         kubeServiceInfo.getConfig().getClusters().stream().forEach(c -> {
             LOG.infof(">>> Cluster name: %s", c.getName());
@@ -66,8 +68,17 @@ class ArgocdExtensionProcessor {
         kubeServiceInfo.getConfig().getUsers().stream().forEach(u -> LOG.infof(">>> User key: %s", u.getUser().getClientKeyData()));
         kubeServiceInfo.getConfig().getContexts().stream().forEach(ctx -> LOG.infof(">>> Context : %s", ctx.getContext().getUser()));
 
+        Config kubeConfig = new ConfigBuilder()
+            .withMasterUrl(containerKubeCfg.getClusters().get(0).getCluster().getServer())
+            .withCaCertData(containerKubeCfg.getClusters().get(0).getCluster().getCertificateAuthorityData())
+            .withClientCertData(containerKubeCfg.getUsers().get(0).getUser().getClientCertificateData())
+            .withClientKeyData(containerKubeCfg.getUsers().get(0).getUser().getClientKeyData())
+            .build();
+
         KubernetesClient client = new KubernetesClientBuilder()
-            .withConfig(kubeServiceInfo.getExtKubeConfig())
+            // Don't work as string to be marshalled are different between KindContainer and F8 Kube client
+            // .withConfig(kubeServiceInfo.getExtKubeConfig())
+            .withConfig(kubeConfig)
             .build();
 
         client.resources(Pod.class).inNamespace("default").list().getItems().forEach(pod -> {
