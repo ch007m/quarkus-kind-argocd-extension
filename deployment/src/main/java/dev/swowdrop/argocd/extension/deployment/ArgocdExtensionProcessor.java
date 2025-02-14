@@ -85,16 +85,11 @@ class ArgocdExtensionProcessor {
             LOG.infof(">>> Name: %s, status: %s", pod.getMetadata().getName(), pod.getStatus().getConditions().get(0).getStatus());
         });
 
-        try {
-            Thread.sleep(120000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-
-/*        Config kubeConfig = kubeDevServiceClient.get().getConfig();
+        /*
+        Config kubeConfig = kubeDevServiceClient.get().getConfig();
         kubeConfig.getContexts().stream().forEach(ctx -> LOG.info(">>> Kube ctx: " + ctx));
-        LOG.infof(">>> Master URL is: %s", kubeConfig.getMasterUrl());*/
+        LOG.infof(">>> Master URL is: %s", kubeConfig.getMasterUrl());
+        */
 
         // TODO: the code hereafter is not needed anymore as we can launch the kind container
         String httpUrl = argocdDevServiceInfo.httpUrl();
