@@ -81,9 +81,15 @@ class ArgocdExtensionProcessor {
             .withConfig(kubeConfig)
             .build();
 
-        client.resources(Pod.class).inNamespace("default").list().getItems().forEach(pod -> {
-            LOG.infof("Name: %s, status: %s", pod.getMetadata().getName(), pod.getStatus().getConditions().get(0).getStatus());
+        client.resources(Pod.class).inNamespace("kube-system").list().getItems().forEach(pod -> {
+            LOG.infof(">>> Name: %s, status: %s", pod.getMetadata().getName(), pod.getStatus().getConditions().get(0).getStatus());
         });
+
+        try {
+            Thread.sleep(120000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
 
 /*        Config kubeConfig = kubeDevServiceClient.get().getConfig();
