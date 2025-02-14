@@ -18,7 +18,7 @@ class ArgocdExtensionProcessor {
     static volatile DevServicesResultBuildItem.RunningDevService devService;
 
     @BuildStep
-    public DevServicesResultBuildItem feature(
+    public DevServicesResultBuildItem deployArgocd(
         ArgocdBuildTimeConfig config,
         CuratedApplicationShutdownBuildItem closeBuildItem,
         Optional<KubernetesClientBuildItem> kubeDevServiceClient) {
