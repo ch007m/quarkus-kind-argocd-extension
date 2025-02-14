@@ -1,6 +1,7 @@
 package dev.swowdrop.argocd.extension.deployment;
 
 import io.fabric8.kubernetes.client.Config;
+import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CuratedApplicationShutdownBuildItem;
 import io.quarkus.deployment.builditem.DevServicesResultBuildItem;
@@ -18,10 +19,27 @@ class ArgocdExtensionProcessor {
     static volatile DevServicesResultBuildItem.RunningDevService devService;
 
     @BuildStep
+    public void createHelloWorld(
+        ArgocdBuildTimeConfig config,
+        BuildProducer<ArgocdDevServiceInfoBuildItem> argocdDevServiceInfo) {
+
+        var argocd = new ArgocdContainer(config.devservices());
+        argocd.start();
+
+        argocdDevServiceInfo.produce(new ArgocdDevServiceInfoBuildItem(
+            argocd.getContainerName(),
+            argocd.getHttpUrl(),
+            argocd,
+            argocd.getContainerId()
+        ));
+    }
+
+    @BuildStep
     public DevServicesResultBuildItem deployArgocd(
         ArgocdBuildTimeConfig config,
         CuratedApplicationShutdownBuildItem closeBuildItem,
-        Optional<KubernetesClientBuildItem> kubeDevServiceClient) {
+        Optional<KubernetesClientBuildItem> kubeDevServiceClient,
+        ArgocdDevServiceInfoBuildItem argocdDevServiceInfo) {
 
         if (devService != null) {
             // only produce DevServicesResultBuildItem when the dev service first starts.
@@ -32,19 +50,17 @@ class ArgocdExtensionProcessor {
             // Argocd Dev Service not enabled
             return null;
         }
-        var argocd = new ArgocdContainer(config.devservices());
-        argocd.start();
 
         Config kubeConfig = kubeDevServiceClient.get().getConfig();
         kubeConfig.getContexts().stream().forEach(ctx -> LOG.info("Kube ctx: " + ctx));
 
-        String httpUrl = argocd.getHttpUrl();
+        String httpUrl = argocdDevServiceInfo.httpUrl();
         LOG.infof("Argocd HTTP URL: %s", httpUrl);
         Map<String, String> configOverrides = Map.of("quarkus.argocd.devservices.http-url", httpUrl);
 
-        ContainerShutdownCloseable closeable = new ContainerShutdownCloseable(argocd, ArgocdProcessor.FEATURE);
+        ContainerShutdownCloseable closeable = new ContainerShutdownCloseable(argocdDevServiceInfo.container(), ArgocdProcessor.FEATURE);
         closeBuildItem.addCloseTask(closeable::close, true);
-        devService = new DevServicesResultBuildItem.RunningDevService(ArgocdProcessor.FEATURE, argocd.getContainerId(), closeable, configOverrides);
+        devService = new DevServicesResultBuildItem.RunningDevService(ArgocdProcessor.FEATURE, argocdDevServiceInfo.containerId(), closeable, configOverrides);
 
         return devService.toBuildItem();
     }
