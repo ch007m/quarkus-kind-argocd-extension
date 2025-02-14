@@ -20,6 +20,11 @@
             <artifactId>quarkus-kubernetes-client-deployment</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.quarkiverse.jgit</groupId>
+            <artifactId>quarkus-jgit-deployment</artifactId>
+            <version>${quarkus-jgit.version}</version>
+        </dependency>
+        <dependency>
             <groupId>dev.swowdrop</groupId>
             <artifactId>argocd-extension</artifactId>
             <version>${project.version}</version>

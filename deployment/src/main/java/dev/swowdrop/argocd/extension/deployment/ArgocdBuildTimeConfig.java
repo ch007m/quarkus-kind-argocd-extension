@@ -23,13 +23,13 @@ public interface ArgocdBuildTimeConfig {
             boolean enabled();
 
             /**
-             * If logs should be shown from the Gitea container.
+             * If logs should be shown from the Argocd container.
              */
             @WithDefault("false")
             boolean showLogs();
 
             /**
-             * The exposed HTTP port for the Gitea container.
+             * The exposed HTTP port for the Argocd container.
              * If not specified, it will pick a random port
              */
             OptionalInt httpPort();
