@@ -124,7 +124,7 @@ class ArgocdExtensionProcessor {
         var argocd_admin_password = client.resources(Secret.class)
             .inNamespace(ARGOCD_CONTROLLER_NAMESPACE).withName(ARGOCD_INITIAL_ADMIN_SECRET_NAME)
             .get().getData().get("password");
-        LOG.infof("Argocd admin password : %s", Base64.getDecoder().decode(argocd_admin_password).toString());
+        LOG.infof("Argocd admin password : %s", new String(Base64.getDecoder().decode(argocd_admin_password)));
 
         // TODO: To be reviewed in order to pass argocd parameters for the service consuming the extension
         Map<String, String> configOverrides = Map.of(
