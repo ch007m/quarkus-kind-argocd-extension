@@ -3,8 +3,10 @@ package dev.swowdrop.argocd.extension.it;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.swowdrop.argocd.extension.deployment.ArgocdModel;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.quarkiverse.argocd.v1alpha1.Application;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -34,15 +36,24 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
     private static KubernetesClient client;
     private static String ARGOCD_TOKEN;
     private static String ARGOCD_API;
-    private static String ARGOCD_NAMESPACE = ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.controller-namespace",String.class);
+    private static String ARGOCD_NAMESPACE;
 
-    // TODO: To be reviewed
     @BeforeAll
-    public static void getToken() throws IOException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
+    public static void setup() {
+        var objectMapper = new ObjectMapper();
+        objectMapper.addMixIn(ObjectMeta.class, ObjectMetaMixin.class);
+
+        var kubernetesSerialization = new KubernetesSerialization(objectMapper, true);
         client = new KubernetesClientBuilder()
             .withConfig(Config.fromKubeconfig(ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.kube-config", String.class)))
+            .withKubernetesSerialization(kubernetesSerialization)
             .build();
 
+        ARGOCD_NAMESPACE = ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.controller-namespace",String.class);
+    }
+    // TODO: To be reviewed
+    @BeforeAll
+    public static void getTokenUsingArgoApi() throws IOException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
         // Get the Argocd Server container port and forward it
         var argocd_pod = client.resources(Pod.class)
             .inNamespace(ARGOCD_NAMESPACE)
