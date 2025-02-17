@@ -17,17 +17,25 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+
 import org.jboss.logging.Logger;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 
 
 @QuarkusTest
-public class ArgocdExtensionDevModeTest {
+public class ArgocdExtensionDevModeTest extends BaseHTTP {
 
     private static final Logger LOG = Logger.getLogger(ArgocdExtensionDevModeTest.class);
     private static KubernetesClient client;
 
     @BeforeAll
-    public static void getToken() throws IOException, InterruptedException {
+    public static void getToken() throws IOException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
         client = new KubernetesClientBuilder()
             .withConfig(Config.fromKubeconfig(ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.kube-config", String.class)))
             .build();
@@ -47,11 +55,13 @@ public class ArgocdExtensionDevModeTest {
         InetAddress inetAddress = InetAddress.getByAddress(new byte[] { 127, 0, 0, 1 });
         LocalPortForward portForward = client.pods().resource(argocd_pod)
             .portForward(containerPort, inetAddress, 8080);
-        LOG.infof("Port forwarded at http://127.0.0.1:%d", portForward.getLocalPort());
+        LOG.infof("Container port: %d forwarded at https://127.0.0.1:%d", containerPort, portForward.getLocalPort());
 
-        var argocdApi = String.format("http://127.0.0.1:%d/api/v1/session", portForward.getLocalPort());
+        // The protocol to be used should be HTTPS to access the Argocd Server
+        var argocdApi = String.format("https://127.0.0.1:%d/api/v1/session", portForward.getLocalPort());
         var admin_password = ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.admin-password", String.class);
 
+        // Populate the Body message
         ArgocdModel model = new ArgocdModel();
         model.setUsername("admin");
         model.setPassword(admin_password);
@@ -60,8 +70,10 @@ public class ArgocdExtensionDevModeTest {
         var argocdRequestBody = mapper.writeValueAsString(model);
         LOG.info("Argocd request body: " + argocdRequestBody);
 
-        // Get an Argocd Token
-        HttpClient client = HttpClient.newHttpClient();
+        var client = HttpClient.newBuilder()
+            .sslContext(byPassSSL())
+            .build();
+
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(argocdApi))
             .POST(HttpRequest.BodyPublishers.ofString(argocdRequestBody))
@@ -69,7 +81,9 @@ public class ArgocdExtensionDevModeTest {
             .build();
         LOG.info("Posting HTTP request: " + request);
 
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        // Get an Argocd Token for the tests
+        HttpResponse<String> response = client
+            .send(request, HttpResponse.BodyHandlers.ofString());
         LOG.infof("Token : %s",response.body());
         Assertions.assertEquals(200, response.statusCode());
     }
