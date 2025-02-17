@@ -3,6 +3,7 @@ package dev.swowdrop.argocd.extension.it;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.swowdrop.argocd.extension.deployment.ArgocdModel;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.LocalPortForward;
@@ -31,7 +32,7 @@ public class ArgocdExtensionDevModeTest {
     @BeforeAll
     public static void getToken() throws IOException, InterruptedException {
         client = new KubernetesClientBuilder()
-            .withConfig(ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.kube-config", String.class))
+            .withConfig(Config.fromKubeconfig(ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.kube-config", String.class)))
             .build();
 
         var ARGOCD_NAMESPACE = ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.controller-namespace",String.class);

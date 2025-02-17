@@ -129,7 +129,7 @@ class ArgocdExtensionProcessor {
         // TODO: To be reviewed in order to pass argocd parameters for the service consuming the extension
         Map<String, String> configOverrides = Map.of(
             "quarkus.argocd.devservices.controller-namespace", ARGOCD_CONTROLLER_NAMESPACE,
-            "quarkus.argocd.devservices.admin-password", Base64.getDecoder().decode(argocd_admin_password).toString(),
+            "quarkus.argocd.devservices.admin-password", new String(Base64.getDecoder().decode(argocd_admin_password)),
             "quarkus.argocd.devservices.kube-config",kubeServiceInfo.getExtKubeConfig());
 
         argocdDevServiceInfo.produce(new ArgocdDevServiceInfoBuildItem(
