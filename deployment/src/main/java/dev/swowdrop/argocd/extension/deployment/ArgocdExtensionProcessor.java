@@ -68,28 +68,13 @@ class ArgocdExtensionProcessor {
         kubeServiceInfo.getConfig().getUsers().stream().forEach(u -> LOG.infof(">>> User key: %s", u.getUser().getClientKeyData()));
         kubeServiceInfo.getConfig().getContexts().stream().forEach(ctx -> LOG.infof(">>> Context : %s", ctx.getContext().getUser()));
 
-        Config kubeConfig = new ConfigBuilder()
-            .withMasterUrl(containerKubeCfg.getClusters().get(0).getCluster().getServer())
-            .withCaCertData(containerKubeCfg.getClusters().get(0).getCluster().getCertificateAuthorityData())
-            .withClientCertData(containerKubeCfg.getUsers().get(0).getUser().getClientCertificateData())
-            .withClientKeyData(containerKubeCfg.getUsers().get(0).getUser().getClientKeyData())
-            .build();
-
         KubernetesClient client = new KubernetesClientBuilder()
-            // Don't work as string to be marshalled are different between KindContainer and F8 Kube client
-            // .withConfig(kubeServiceInfo.getExtKubeConfig())
-            .withConfig(kubeConfig)
+            .withConfig(Config.fromKubeconfig(kubeServiceInfo.getExtKubeConfig()))
             .build();
 
         client.resources(Pod.class).inNamespace("kube-system").list().getItems().forEach(pod -> {
             LOG.infof(">>> Name: %s, status: %s", pod.getMetadata().getName(), pod.getStatus().getConditions().get(0).getStatus());
         });
-
-        /*
-        Config kubeConfig = kubeDevServiceClient.get().getConfig();
-        kubeConfig.getContexts().stream().forEach(ctx -> LOG.info(">>> Kube ctx: " + ctx));
-        LOG.infof(">>> Master URL is: %s", kubeConfig.getMasterUrl());
-        */
 
         // TODO: the code hereafter is not needed anymore as we can launch the kind container
         String httpUrl = argocdDevServiceInfo.httpUrl();
