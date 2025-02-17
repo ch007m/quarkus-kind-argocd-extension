@@ -70,10 +70,6 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
         var argocdRequestBody = mapper.writeValueAsString(model);
         LOG.info("Argocd request body: " + argocdRequestBody);
 
-        var client = HttpClient.newBuilder()
-            .sslContext(byPassSSL())
-            .build();
-
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(argocdApi))
             .POST(HttpRequest.BodyPublishers.ofString(argocdRequestBody))
@@ -82,7 +78,7 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
         LOG.info("Posting HTTP request: " + request);
 
         // Get an Argocd Token for the tests
-        HttpResponse<String> response = client
+        HttpResponse<String> response = getHttpClient()
             .send(request, HttpResponse.BodyHandlers.ofString());
         LOG.infof("Token : %s",response.body());
         Assertions.assertEquals(200, response.statusCode());

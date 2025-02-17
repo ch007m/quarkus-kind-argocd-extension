@@ -5,12 +5,14 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 import java.net.Socket;
+import java.net.http.HttpClient;
+import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
 public class BaseHTTP {
-    protected static SSLContext byPassSSL() throws NoSuchAlgorithmException {        // Create an HTTP POST request
+    protected static SSLContext byPassSSL() throws NoSuchAlgorithmException, KeyManagementException {        // Create an HTTP POST request
         var trustManager = new X509ExtendedTrustManager() {
             @Override
             public X509Certificate[] getAcceptedIssuers() {
@@ -45,4 +47,11 @@ public class BaseHTTP {
         sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());
         return sslContext;
     }
+
+    protected static HttpClient getHttpClient() throws NoSuchAlgorithmException, KeyManagementException {
+        return HttpClient.newBuilder()
+            .sslContext(byPassSSL())
+            .build();
+    }
+
 }
