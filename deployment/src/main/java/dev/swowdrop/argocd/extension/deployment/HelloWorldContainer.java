@@ -6,13 +6,13 @@ import org.jboss.logging.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
-public class ArgocdContainer extends GenericContainer<ArgocdContainer> {
-    private static final Logger LOG = Logger.getLogger(ArgocdContainer.class);
+public class HelloWorldContainer extends GenericContainer<HelloWorldContainer> {
+    private static final Logger LOG = Logger.getLogger(HelloWorldContainer.class);
     private static final int SERVICE_PORT = 8000;
     private static final int HTTP_PORT = 8000;
     private ArgocdBuildTimeConfig.DevService devServiceConfig;
 
-    ArgocdContainer(ArgocdBuildTimeConfig.DevService devServiceConfig) {
+    HelloWorldContainer(ArgocdBuildTimeConfig.DevService devServiceConfig) {
         super("crccheck/hello-world");
         this.devServiceConfig = devServiceConfig;
         withExposedPorts(SERVICE_PORT);

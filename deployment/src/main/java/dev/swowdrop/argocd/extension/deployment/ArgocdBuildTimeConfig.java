@@ -17,6 +17,12 @@ public interface ArgocdBuildTimeConfig {
 
         interface DevService {
             /**
+             * Whether debugging level is enabled.
+             */
+            @WithDefault("false")
+            boolean debugEnabled();
+
+            /**
              * Whether devservice is enabled.
              */
             @WithDefault("false")
@@ -33,5 +39,27 @@ public interface ArgocdBuildTimeConfig {
              * If not specified, it will pick a random port
              */
             OptionalInt httpPort();
+
+            /**
+             * The version of Argocd to be installed from the GitHub repository
+             * If not specified, it will use the resources published on master branch
+             * The version to be used should be specified using the tagged release: v2.14.3, etc
+             */
+            @WithDefault("latest")
+            String version();
+
+            /**
+             * The Argocd controllers namespace where: Application, ApplicationSet, etc. are deployed and running
+             * The default namespace is: argocd
+             */
+            @WithDefault("argocd")
+            String controllerNamespace();
+
+            /**
+             * Time to wait till a resource is ready: pod, etc
+             * The default value is: 180 seconds
+             */
+            @WithDefault("180")
+            long timeOut();
         }
 }
