@@ -35,12 +35,6 @@ public interface ArgocdBuildTimeConfig {
         boolean showLogs();
 
         /**
-         * The exposed HTTP port for the Argocd container.
-         * If not specified, it will pick a random port
-         */
-        OptionalInt httpPort();
-
-        /**
          * The version of Argocd to be installed from the GitHub repository
          * If not specified, it will use the resources published on master branch
          * The version to be used should be specified using the tagged release: v2.14.3, etc

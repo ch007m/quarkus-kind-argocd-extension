@@ -20,7 +20,7 @@ public class HelloWorldContainer extends GenericContainer<HelloWorldContainer> {
         waitingFor(Wait.forLogMessage(".*" + "httpd" + ".*", 1));
         withStartupAttempts(2);
 
-        devServiceConfig.httpPort().ifPresent(port -> addFixedExposedPort(port, HTTP_PORT));
+        //devServiceConfig.httpPort().ifPresent(port -> addFixedExposedPort(port, HTTP_PORT));
 
         if (devServiceConfig.showLogs()) {
             withLogConsumer(new JBossLoggingConsumer(LOG));
