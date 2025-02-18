@@ -38,7 +38,6 @@ class ArgocdExtensionProcessor {
     @BuildStep
     public DevServicesResultBuildItem deployArgocd(
         ArgocdBuildTimeConfig config,
-        //BuildProducer<ArgocdDevServiceInfoBuildItem> argocdDevServiceInfo,
         KubernetesDevServiceInfoBuildItem kubeServiceInfo) {
 
         if (devService != null) {
@@ -132,16 +131,10 @@ class ArgocdExtensionProcessor {
             "quarkus.argocd.devservices.admin-password", new String(Base64.getDecoder().decode(argocd_admin_password)),
             "quarkus.argocd.devservices.kube-config", kubeServiceInfo.getKubeConfig());
 
-/*        argocdDevServiceInfo.produce(new ArgocdDevServiceInfoBuildItem(
-            kubeServiceInfo.getContainer().getContainerName(),
-            kubeServiceInfo.getKubeConfig(),
-            kubeServiceInfo.getContainer().getContainerId()));*/
-
         return new DevServicesResultBuildItem.RunningDevService(
             ArgocdProcessor.FEATURE,
             kubeServiceInfo.getContainer().getContainerId(),
             new ContainerShutdownCloseable(kubeServiceInfo.getContainer(), ArgocdProcessor.FEATURE),
-            configOverrides)
-            .toBuildItem();
+            configOverrides).toBuildItem();
     }
 }
