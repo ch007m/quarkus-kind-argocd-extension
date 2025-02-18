@@ -6,13 +6,15 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.*;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesSerialization;
 import io.quarkiverse.argocd.v1alpha1.AppProject;
 import io.quarkiverse.argocd.v1alpha1.Application;
 import io.quarkus.test.junit.QuarkusTest;
-
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.jboss.logging.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -20,8 +22,6 @@ import org.junit.jupiter.api.Test;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
-
-import org.jboss.logging.Logger;
 
 import static dev.swowdrop.argocd.extension.it.ArgocdResourceGenerator.populateApplication;
 import static dev.swowdrop.argocd.extension.it.ArgocdResourceGenerator.populateProject;
@@ -49,7 +49,7 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
             .withKubernetesSerialization(kubernetesSerialization)
             .build();
 
-        ARGOCD_NAMESPACE = ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.controller-namespace",String.class);
+        ARGOCD_NAMESPACE = ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.controller-namespace", String.class);
     }
 
     protected static void waitTillPodByLabelReady(String key, String value) {
@@ -227,7 +227,7 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
         LOG.info("Patching the Argocd ConfigMap to add the test3 namespace to the property: application.namespaces");
         client.configMaps().inNamespace(ARGOCD_NAMESPACE).withName(ARGOCD_CONFIGMAP_PARAMS_NAME)
             .edit(cm -> new ConfigMapBuilder(cm)
-                .addToData("application.namespaces",ARGO_APPLICATION_NAMESPACE)
+                .addToData("application.namespaces", ARGO_APPLICATION_NAMESPACE)
                 .build());
 
         LOG.info("Creating the test3 namespace");
@@ -239,7 +239,7 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
         client.apps().statefulSets().inNamespace(ARGOCD_NAMESPACE).withName(ARGOCD_APP_CONTROLLER_NAME)
             .rolling().restart();
 
-        waitTillPodByLabelReady("app.kubernetes.io/name",ARGOCD_SERVER_NAME);
+        waitTillPodByLabelReady("app.kubernetes.io/name", ARGOCD_SERVER_NAME);
         waitTillPodReady(ARGOCD_APP_CONTROLLER_NAME + "-0");
 
         LOG.info("Deploy the AppProject");

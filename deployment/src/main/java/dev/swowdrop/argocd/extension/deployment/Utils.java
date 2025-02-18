@@ -22,8 +22,8 @@ public class Utils {
                 resourceAsStream = new URL("https://raw.githubusercontent.com/argoproj/argo-cd/refs/tags/" + version + "/manifests/install.yaml").openStream();
             }
         } catch (Exception e) {
-           LOG.error("The resources cannot be fetched from the argocd repository URL !");
-           LOG.error(e);
+            LOG.error("The resources cannot be fetched from the argocd repository URL !");
+            LOG.error(e);
         }
         return resourceAsStream;
     }

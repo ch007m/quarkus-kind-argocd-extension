@@ -8,7 +8,7 @@ import io.quarkiverse.argocd.v1alpha1.ApplicationBuilder;
 public class ArgocdResourceGenerator {
 
     public static AppProject populateProject(ArgoConfigurator argoConfigurator) {
-    // @formatter:off
+        // @formatter:off
         var projectBuilder = new AppProjectBuilder()
           .withNewMetadata()
             .withName(argoConfigurator.getProjectName())

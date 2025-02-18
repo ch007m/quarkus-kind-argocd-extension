@@ -10,56 +10,56 @@ import java.util.OptionalInt;
 @ConfigMapping(prefix = "quarkus.argocd")
 @ConfigRoot(phase = ConfigPhase.BUILD_TIME)
 public interface ArgocdBuildTimeConfig {
+    /**
+     * Configuration for the development services.
+     */
+    DevService devservices();
+
+    interface DevService {
         /**
-         * Configuration for the development services.
+         * Whether debugging level is enabled.
          */
-        DevService devservices();
+        @WithDefault("false")
+        boolean debugEnabled();
 
-        interface DevService {
-            /**
-             * Whether debugging level is enabled.
-             */
-            @WithDefault("false")
-            boolean debugEnabled();
+        /**
+         * Whether devservice is enabled.
+         */
+        @WithDefault("false")
+        boolean enabled();
 
-            /**
-             * Whether devservice is enabled.
-             */
-            @WithDefault("false")
-            boolean enabled();
+        /**
+         * If logs should be shown from the Argocd container.
+         */
+        @WithDefault("false")
+        boolean showLogs();
 
-            /**
-             * If logs should be shown from the Argocd container.
-             */
-            @WithDefault("false")
-            boolean showLogs();
+        /**
+         * The exposed HTTP port for the Argocd container.
+         * If not specified, it will pick a random port
+         */
+        OptionalInt httpPort();
 
-            /**
-             * The exposed HTTP port for the Argocd container.
-             * If not specified, it will pick a random port
-             */
-            OptionalInt httpPort();
+        /**
+         * The version of Argocd to be installed from the GitHub repository
+         * If not specified, it will use the resources published on master branch
+         * The version to be used should be specified using the tagged release: v2.14.3, etc
+         */
+        @WithDefault("latest")
+        String version();
 
-            /**
-             * The version of Argocd to be installed from the GitHub repository
-             * If not specified, it will use the resources published on master branch
-             * The version to be used should be specified using the tagged release: v2.14.3, etc
-             */
-            @WithDefault("latest")
-            String version();
+        /**
+         * The Argocd controllers namespace where: Application, ApplicationSet, etc. are deployed and running
+         * The default namespace is: argocd
+         */
+        @WithDefault("argocd")
+        String controllerNamespace();
 
-            /**
-             * The Argocd controllers namespace where: Application, ApplicationSet, etc. are deployed and running
-             * The default namespace is: argocd
-             */
-            @WithDefault("argocd")
-            String controllerNamespace();
-
-            /**
-             * Time to wait till a resource is ready: pod, etc
-             * The default value is: 180 seconds
-             */
-            @WithDefault("180")
-            long timeOut();
-        }
+        /**
+         * Time to wait till a resource is ready: pod, etc
+         * The default value is: 180 seconds
+         */
+        @WithDefault("180")
+        long timeOut();
+    }
 }

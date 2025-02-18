@@ -1,17 +1,14 @@
 package dev.swowdrop.argocd.extension.deployment;
 
-import com.dajudge.kindcontainer.client.config.KubeConfig;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.internal.KubeConfigUtils;
-import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.DevServicesResultBuildItem;
-import io.quarkus.kubernetes.client.spi.KubernetesDevServiceInfoBuildItem;
-
 import io.quarkus.devservices.common.ContainerShutdownCloseable;
+import io.quarkus.kubernetes.client.spi.KubernetesDevServiceInfoBuildItem;
 import org.jboss.logging.Logger;
 
 import java.util.Base64;
@@ -56,7 +53,7 @@ class ArgocdExtensionProcessor {
 
         // Convert the kube config yaml to its Java Class
         Config kubeConfig = KubeConfigUtils.parseConfigFromString(kubeServiceInfo.getKubeConfig());
-        
+
         if (config.devservices().debugEnabled()) {
             LOG.info(">>> Cluster container name : " + kubeServiceInfo.getContainer().getContainerName());
             kubeConfig.getClusters().stream().forEach(c -> {
@@ -104,13 +101,14 @@ class ArgocdExtensionProcessor {
             var res = client.resource(item).inNamespace(ARGOCD_CONTROLLER_NAMESPACE);
             res.create();
             assertNotNull(res);
-        };
+        }
+        ;
 
         // Waiting till the pods are ready/running ...
-        waitTillPodByLabelReady("app.kubernetes.io/name",ARGOCD_REDIS_NAME);
-        waitTillPodByLabelReady("app.kubernetes.io/name",ARGOCD_REPO_SERVER_NAME);
-        waitTillPodByLabelReady("app.kubernetes.io/name",ARGOCD_SERVER_NAME);
-        waitTillPodByLabelReady("app.kubernetes.io/name",ARGOCD_APPLICATIONSET_CONTROLLER_NAME);
+        waitTillPodByLabelReady("app.kubernetes.io/name", ARGOCD_REDIS_NAME);
+        waitTillPodByLabelReady("app.kubernetes.io/name", ARGOCD_REPO_SERVER_NAME);
+        waitTillPodByLabelReady("app.kubernetes.io/name", ARGOCD_SERVER_NAME);
+        waitTillPodByLabelReady("app.kubernetes.io/name", ARGOCD_APPLICATIONSET_CONTROLLER_NAME);
         waitTillPodReady(ARGOCD_APP_CONTROLLER_NAME + "-0");
 
         if (config.devservices().debugEnabled()) {
@@ -121,7 +119,7 @@ class ArgocdExtensionProcessor {
                     LOG.infof("Pod : %, status: %s", p.getMetadata().getName(), p.getStatus().getConditions().get(0).getStatus());
                 });
         }
-        
+
         // Get the argocd admin secret
         var argocd_admin_password = client.resources(Secret.class)
             .inNamespace(ARGOCD_CONTROLLER_NAMESPACE).withName(ARGOCD_INITIAL_ADMIN_SECRET_NAME)
@@ -132,7 +130,7 @@ class ArgocdExtensionProcessor {
         Map<String, String> configOverrides = Map.of(
             "quarkus.argocd.devservices.controller-namespace", ARGOCD_CONTROLLER_NAMESPACE,
             "quarkus.argocd.devservices.admin-password", new String(Base64.getDecoder().decode(argocd_admin_password)),
-            "quarkus.argocd.devservices.kube-config",kubeServiceInfo.getKubeConfig());
+            "quarkus.argocd.devservices.kube-config", kubeServiceInfo.getKubeConfig());
 
 /*        argocdDevServiceInfo.produce(new ArgocdDevServiceInfoBuildItem(
             kubeServiceInfo.getContainer().getContainerName(),
@@ -144,6 +142,6 @@ class ArgocdExtensionProcessor {
             kubeServiceInfo.getContainer().getContainerId(),
             new ContainerShutdownCloseable(kubeServiceInfo.getContainer(), ArgocdProcessor.FEATURE),
             configOverrides)
-        .toBuildItem();
+            .toBuildItem();
     }
 }
