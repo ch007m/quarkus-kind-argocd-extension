@@ -1,13 +1,11 @@
 package dev.swowdrop.argocd.extension.deployment;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Secret;
+import com.dajudge.kindcontainer.client.config.KubeConfig;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.internal.KubeConfigUtils;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.DevServicesResultBuildItem;
@@ -43,7 +41,7 @@ class ArgocdExtensionProcessor {
     @BuildStep
     public DevServicesResultBuildItem deployArgocd(
         ArgocdBuildTimeConfig config,
-        BuildProducer<ArgocdDevServiceInfoBuildItem> argocdDevServiceInfo,
+        //BuildProducer<ArgocdDevServiceInfoBuildItem> argocdDevServiceInfo,
         KubernetesDevServiceInfoBuildItem kubeServiceInfo) {
 
         if (devService != null) {
@@ -55,26 +53,30 @@ class ArgocdExtensionProcessor {
             // Argocd Dev Service not enabled
             return null;
         }
+
+        // Convert the kube config yaml to its Java Class
+        Config kubeConfig = KubeConfigUtils.parseConfigFromString(kubeServiceInfo.getKubeConfig());
         
         if (config.devservices().debugEnabled()) {
-            LOG.info(">>> Cluster container name : " + kubeServiceInfo.getName());
-            kubeServiceInfo.getConfig().getClusters().stream().forEach(c -> {
+            LOG.info(">>> Cluster container name : " + kubeServiceInfo.getContainer().getContainerName());
+            kubeConfig.getClusters().stream().forEach(c -> {
                 LOG.debugf(">>> Cluster name: %s", c.getName());
                 LOG.debugf(">>> API URL: %s", c.getCluster().getServer());
             });
-            kubeServiceInfo.getConfig().getUsers().stream().forEach(u -> LOG.debugf(">>> User key: %s", u.getUser().getClientKeyData()));
-            kubeServiceInfo.getConfig().getContexts().stream().forEach(ctx -> LOG.debugf(">>> Context : %s", ctx.getContext().getUser()));
+            kubeConfig.getUsers().stream().forEach(u -> LOG.debugf(">>> User key: %s", u.getUser().getClientKeyData()));
+            kubeConfig.getContexts().stream().forEach(ctx -> LOG.debugf(">>> Context : %s", ctx.getContext().getUser()));
         }
-        
-        var ARGOCD_CONTROLLER_NAMESPACE = config.devservices().controllerNamespace();
 
+        // Create the Kubernetes client using the Kube YAML Config
         KubernetesClient client = new KubernetesClientBuilder()
-            .withConfig(Config.fromKubeconfig(kubeServiceInfo.getExtKubeConfig()))
+            .withConfig(io.fabric8.kubernetes.client.Config.fromKubeconfig(kubeServiceInfo.getKubeConfig()))
             .build();
 
         // Pass the configuration parameters to the utility class
         Utils.setConfig(config.devservices());
         Utils.setKubernetesClient(client);
+
+        var ARGOCD_CONTROLLER_NAMESPACE = config.devservices().controllerNamespace();
 
         // Install the Argocd resources from the YAML manifest file
         List<HasMetadata> items = client.load(Utils.fetchResourcesFromURL(config.devservices().version())).items();
@@ -130,12 +132,12 @@ class ArgocdExtensionProcessor {
         Map<String, String> configOverrides = Map.of(
             "quarkus.argocd.devservices.controller-namespace", ARGOCD_CONTROLLER_NAMESPACE,
             "quarkus.argocd.devservices.admin-password", new String(Base64.getDecoder().decode(argocd_admin_password)),
-            "quarkus.argocd.devservices.kube-config",kubeServiceInfo.getExtKubeConfig());
+            "quarkus.argocd.devservices.kube-config",kubeServiceInfo.getKubeConfig());
 
-        argocdDevServiceInfo.produce(new ArgocdDevServiceInfoBuildItem(
-            kubeServiceInfo.getName(),
-            kubeServiceInfo.getConfig(),
-            kubeServiceInfo.getContainer().getContainerId()));
+/*        argocdDevServiceInfo.produce(new ArgocdDevServiceInfoBuildItem(
+            kubeServiceInfo.getContainer().getContainerName(),
+            kubeServiceInfo.getKubeConfig(),
+            kubeServiceInfo.getContainer().getContainerId()));*/
 
         return new DevServicesResultBuildItem.RunningDevService(
             ArgocdProcessor.FEATURE,

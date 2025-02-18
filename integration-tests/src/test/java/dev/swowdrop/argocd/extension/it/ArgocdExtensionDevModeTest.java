@@ -157,7 +157,7 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
         } catch (Exception e) {
             LOG.error(client.getKubernetesSerialization().asYaml(client.genericKubernetesResources("argoproj.io/v1alpha1", "Application").inNamespace(ARGOCD_NAMESPACE).withName(argoConfigurator.getApplicationName()).get()));
         }
-        LOG.infof("Argocd Application: {} healthy", argoConfigurator.getApplicationName());
+        LOG.infof("Argocd Application: %s healthy", argoConfigurator.getApplicationName());
 
         LOG.info("Checking now when Argocd Application will be synced");
         try {
@@ -173,7 +173,7 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
         } catch (Exception e) {
             LOG.error(client.getKubernetesSerialization().asYaml(client.genericKubernetesResources("argoproj.io/v1alpha1", "Application").inNamespace(ARGOCD_NAMESPACE).withName(argoConfigurator.getApplicationName()).get()));
         }
-        LOG.infof("Argocd Application: {} synced", argoConfigurator.getApplicationName());
+        LOG.infof("Argocd Application: %s synced", argoConfigurator.getApplicationName());
 
         Application app = client.resources(Application.class)
             .inNamespace(ARGOCD_NAMESPACE)
@@ -224,7 +224,7 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
         } catch (Exception e) {
             LOG.error(client.getKubernetesSerialization().asYaml(client.genericKubernetesResources("argoproj.io/v1alpha1", "Application").inNamespace(ARGOCD_NAMESPACE).withName(config.getApplicationName()).get()));
         }
-        LOG.infof("Argocd Application: {} healthy", config.getApplicationName());
+        LOG.infof("Argocd Application: %s healthy", config.getApplicationName());
 
         LOG.info("Checking now when Argocd Application will be synced");
         try {
@@ -240,7 +240,7 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
         } catch (Exception e) {
             LOG.error(client.getKubernetesSerialization().asYaml(client.genericKubernetesResources("argoproj.io/v1alpha1", "Application").inNamespace(ARGOCD_NAMESPACE).withName(config.getApplicationName()).get()));
         }
-        LOG.infof("Argocd Application: {} synced", config.getApplicationName());
+        LOG.infof("Argocd Application: %s synced", config.getApplicationName());
 
         Application app = client.resources(Application.class)
             .inNamespace(ARGOCD_NAMESPACE)
@@ -322,7 +322,7 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
         } catch (Exception e) {
             LOG.error(client.getKubernetesSerialization().asYaml(client.genericKubernetesResources("argoproj.io/v1alpha1", "Application").inNamespace(ARGO_APPLICATION_NAMESPACE).withName(config.getApplicationName()).get()));
         }
-        LOG.infof("Argocd Application: {} healthy", config.getApplicationName());
+        LOG.infof("Argocd Application: %s healthy", config.getApplicationName());
 
         LOG.info("Checking now when Argocd Application will be synced");
         try {
@@ -338,15 +338,15 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
         } catch (Exception e) {
             LOG.error(client.getKubernetesSerialization().asYaml(client.genericKubernetesResources("argoproj.io/v1alpha1", "Application").inNamespace(ARGO_APPLICATION_NAMESPACE).withName(config.getApplicationName()).get()));
         }
-        LOG.infof("Argocd Application: {} synced", config.getApplicationName());
+        LOG.infof("Argocd Application: %s synced", config.getApplicationName());
 
         Application app = client.resources(Application.class)
-            .inNamespace("test-3")
+            .inNamespace(ARGO_APPLICATION_NAMESPACE)
             .withName(config.getApplicationName()).get();
         LOG.warn(client.getKubernetesSerialization().asYaml(app));
 
         AppProject appProject = client.resources(AppProject.class)
-            .inNamespace("test-3")
+            .inNamespace(ARGO_APPLICATION_NAMESPACE)
             .withName(config.getApplicationName()).get();
         LOG.warn(client.getKubernetesSerialization().asYaml(appProject));
     }
