@@ -28,7 +28,7 @@ import static dev.swowdrop.argocd.extension.it.ArgocdResourceGenerator.populateP
 
 
 @QuarkusTest
-public class ArgocdExtensionDevModeTest extends BaseHTTP {
+public class ArgocdExtensionDevModeTest {
 
     private static final Logger LOG = Logger.getLogger(ArgocdExtensionDevModeTest.class);
     private static KubernetesClient client;
