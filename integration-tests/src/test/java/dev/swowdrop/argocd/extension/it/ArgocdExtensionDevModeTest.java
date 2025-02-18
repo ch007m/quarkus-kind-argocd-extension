@@ -2,7 +2,6 @@ package dev.swowdrop.argocd.extension.it;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.swowdrop.argocd.extension.deployment.ArgocdModel;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -14,16 +13,10 @@ import io.quarkiverse.argocd.v1alpha1.Application;
 import io.quarkus.test.junit.QuarkusTest;
 
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeUnit;
@@ -39,8 +32,6 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
 
     private static final Logger LOG = Logger.getLogger(ArgocdExtensionDevModeTest.class);
     private static KubernetesClient client;
-    //private static String ARGOCD_TOKEN;
-    //private static String ARGOCD_API;
     private static String ARGOCD_NAMESPACE;
     private static final String ARGOCD_CONFIGMAP_PARAMS_NAME = "argocd-cmd-params-cm";
     private static final String ARGOCD_SERVER_NAME = "argocd-server";
@@ -76,53 +67,6 @@ public class ArgocdExtensionDevModeTest extends BaseHTTP {
             .waitUntilReady(TIMEOUT, TimeUnit.SECONDS);
         LOG.infof("Pod: %s ready in %s", name, ARGOCD_NAMESPACE);
     }
-
-    // TODO: To be reviewed
-    /*
-      @BeforeAll
-      public static void getTokenUsingArgoApi() throws IOException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
-          // Get the Argocd Server container port and forward it
-          var argocd_pod = client.resources(Pod.class)
-              .inNamespace(ARGOCD_NAMESPACE)
-              .withLabel("app.kubernetes.io/name","argocd-server")
-              .list().getItems().get(0);
-
-          int containerPort = argocd_pod
-                .getSpec()
-                .getContainers().get(0).getPorts().get(0).getContainerPort();
-
-          InetAddress inetAddress = InetAddress.getByAddress(new byte[] { 127, 0, 0, 1 });
-          LocalPortForward portForward = client.pods().resource(argocd_pod)
-              .portForward(containerPort, inetAddress, 8080);
-          LOG.infof("Container port: %d forwarded at https://127.0.0.1:%d", containerPort, portForward.getLocalPort());
-
-          // The protocol to be used should be HTTPS to access the Argocd Server
-          ARGOCD_API = String.format("https://127.0.0.1:%d/api/v1/session", portForward.getLocalPort());
-          var admin_password = ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.admin-password", String.class);
-
-          // Populate the Body message
-          ArgocdModel model = new ArgocdModel();
-          model.setUsername("admin");
-          model.setPassword(admin_password);
-
-          ObjectMapper mapper = new ObjectMapper();
-          var argocdRequestBody = mapper.writeValueAsString(model);
-          LOG.info("Argocd request body: " + argocdRequestBody);
-
-          HttpRequest request = HttpRequest.newBuilder()
-              .uri(URI.create(ARGOCD_API))
-              .POST(HttpRequest.BodyPublishers.ofString(argocdRequestBody))
-              .header("Content-Type","application/json")
-              .build();
-          LOG.info("Posting HTTP request: " + request);
-
-          // Get an Argocd Token for the tests
-          HttpResponse<String> response = getHttpClient()
-              .send(request, HttpResponse.BodyHandlers.ofString());
-          Assertions.assertEquals(200, response.statusCode());
-          ARGOCD_TOKEN = response.body();
-      }
-    */
 
     /*
       Use the Default Argocd AppProject
