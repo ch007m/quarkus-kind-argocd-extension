@@ -35,10 +35,11 @@ class ArgocdExtensionProcessor {
 
     private static final String ARGOCD_INITIAL_ADMIN_SECRET_NAME = "argocd-initial-admin-secret";
 
+    static volatile DevServicesResultBuildItem.RunningDevService devService;
+
     @BuildStep
     public DevServicesResultBuildItem deployArgocd(
         ArgocdBuildTimeConfig config,
-        DevServicesResultBuildItem devService,
         KubernetesDevServiceInfoBuildItem kubeServiceInfo) {
 
         if (devService != null) {
