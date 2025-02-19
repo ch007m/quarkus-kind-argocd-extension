@@ -16,6 +16,7 @@ import java.io.Closeable;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static dev.swowdrop.argocd.extension.deployment.Utils.waitTillPodByLabelReady;
@@ -40,7 +41,7 @@ class ArgocdExtensionProcessor {
     @BuildStep
     public DevServicesResultBuildItem deployArgocd(
         ArgocdBuildTimeConfig config,
-        KubernetesDevServiceInfoBuildItem kubeServiceInfo) {
+        Optional<KubernetesDevServiceInfoBuildItem> kubeServiceInfo) {
 
         if (devService != null) {
             // only produce DevServicesResultBuildItem when the dev service first starts.
@@ -53,10 +54,10 @@ class ArgocdExtensionProcessor {
         }
 
         // Convert the kube config yaml to its Java Class
-        Config kubeConfig = KubeConfigUtils.parseConfigFromString(kubeServiceInfo.getKubeConfig());
+        Config kubeConfig = KubeConfigUtils.parseConfigFromString(kubeServiceInfo.get().getKubeConfig());
 
         if (config.devservices().debugEnabled()) {
-            LOG.info(">>> Cluster container name : " + kubeServiceInfo.getContainerId());
+            LOG.info(">>> Cluster container name : " + kubeServiceInfo.get().getContainerId());
             kubeConfig.getClusters().stream().forEach(c -> {
                 LOG.debugf(">>> Cluster name: %s", c.getName());
                 LOG.debugf(">>> API URL: %s", c.getCluster().getServer());
@@ -67,7 +68,7 @@ class ArgocdExtensionProcessor {
 
         // Create the Kubernetes client using the Kube YAML Config
         KubernetesClient client = new KubernetesClientBuilder()
-            .withConfig(io.fabric8.kubernetes.client.Config.fromKubeconfig(kubeServiceInfo.getKubeConfig()))
+            .withConfig(io.fabric8.kubernetes.client.Config.fromKubeconfig(kubeServiceInfo.get().getKubeConfig()))
             //.withConfig(kubeServiceInfo.getConfig())
             .build();
 
@@ -132,12 +133,11 @@ class ArgocdExtensionProcessor {
         Map<String, String> configOverrides = Map.of(
             "quarkus.argocd.devservices.controller-namespace", ARGOCD_CONTROLLER_NAMESPACE,
             "quarkus.argocd.devservices.admin-password", new String(Base64.getDecoder().decode(argocd_admin_password)),
-                "quarkus.argocd.devservices.kube-config", kubeServiceInfo.getKubeConfig());
+                "quarkus.argocd.devservices.kube-config", kubeServiceInfo.get().getKubeConfig());
 
         return new DevServicesResultBuildItem.RunningDevService(
             ArgocdProcessor.FEATURE,
-            kubeServiceInfo.getContainerId(),
-            //"999",
+            kubeServiceInfo.get().getContainerId(),
             new ContainerShutdownCloseable(new DummyContainer(), ArgocdProcessor.FEATURE),
             configOverrides).toBuildItem();
     }
