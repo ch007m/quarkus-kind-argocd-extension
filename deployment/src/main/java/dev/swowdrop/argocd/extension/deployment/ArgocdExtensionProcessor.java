@@ -10,7 +10,9 @@ import io.quarkus.deployment.builditem.DevServicesResultBuildItem;
 import io.quarkus.devservices.common.ContainerShutdownCloseable;
 import io.quarkus.kubernetes.client.spi.KubernetesDevServiceInfoBuildItem;
 import org.jboss.logging.Logger;
+import org.testcontainers.containers.GenericContainer;
 
+import java.io.Closeable;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -33,11 +35,10 @@ class ArgocdExtensionProcessor {
 
     private static final String ARGOCD_INITIAL_ADMIN_SECRET_NAME = "argocd-initial-admin-secret";
 
-    static volatile DevServicesResultBuildItem.RunningDevService devService;
-
     @BuildStep
     public DevServicesResultBuildItem deployArgocd(
         ArgocdBuildTimeConfig config,
+        DevServicesResultBuildItem devService,
         KubernetesDevServiceInfoBuildItem kubeServiceInfo) {
 
         if (devService != null) {
@@ -54,7 +55,7 @@ class ArgocdExtensionProcessor {
         Config kubeConfig = KubeConfigUtils.parseConfigFromString(kubeServiceInfo.getKubeConfig());
 
         if (config.devservices().debugEnabled()) {
-            LOG.info(">>> Cluster container name : " + kubeServiceInfo.getContainer().getContainerName());
+            LOG.info(">>> Cluster container name : " + kubeServiceInfo.getContainerId());
             kubeConfig.getClusters().stream().forEach(c -> {
                 LOG.debugf(">>> Cluster name: %s", c.getName());
                 LOG.debugf(">>> API URL: %s", c.getCluster().getServer());
@@ -66,6 +67,7 @@ class ArgocdExtensionProcessor {
         // Create the Kubernetes client using the Kube YAML Config
         KubernetesClient client = new KubernetesClientBuilder()
             .withConfig(io.fabric8.kubernetes.client.Config.fromKubeconfig(kubeServiceInfo.getKubeConfig()))
+            //.withConfig(kubeServiceInfo.getConfig())
             .build();
 
         // Pass the configuration parameters to the utility class
@@ -129,12 +131,21 @@ class ArgocdExtensionProcessor {
         Map<String, String> configOverrides = Map.of(
             "quarkus.argocd.devservices.controller-namespace", ARGOCD_CONTROLLER_NAMESPACE,
             "quarkus.argocd.devservices.admin-password", new String(Base64.getDecoder().decode(argocd_admin_password)),
-            "quarkus.argocd.devservices.kube-config", kubeServiceInfo.getKubeConfig());
+                "quarkus.argocd.devservices.kube-config", kubeServiceInfo.getKubeConfig());
 
         return new DevServicesResultBuildItem.RunningDevService(
             ArgocdProcessor.FEATURE,
-            kubeServiceInfo.getContainer().getContainerId(),
-            new ContainerShutdownCloseable(kubeServiceInfo.getContainer(), ArgocdProcessor.FEATURE),
+            kubeServiceInfo.getContainerId(),
+            //"999",
+            new ContainerShutdownCloseable(new DummyContainer(), ArgocdProcessor.FEATURE),
             configOverrides).toBuildItem();
+    }
+
+    private class DummyContainer extends GenericContainer<DummyContainer> implements Closeable {
+        private static final Logger LOG = Logger.getLogger(DummyContainer.class);
+        @Override
+        public void close() {
+            LOG.info("Closing the argocd container ...");
+        }
     }
 }

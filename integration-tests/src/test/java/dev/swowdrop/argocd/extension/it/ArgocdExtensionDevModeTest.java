@@ -48,6 +48,10 @@ public class ArgocdExtensionDevModeTest {
             .withConfig(Config.fromKubeconfig(ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.kube-config", String.class)))
             .withKubernetesSerialization(kubernetesSerialization)
             .build();
+/*        client = new KubernetesClientBuilder()
+            .withConfig(Config.fromKubeconfig(ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.kube-client", String.class)))
+            .withKubernetesSerialization(kubernetesSerialization)
+            .build();*/
 
         ARGOCD_NAMESPACE = ConfigProvider.getConfig().getValue("quarkus.argocd.devservices.controller-namespace", String.class);
     }
